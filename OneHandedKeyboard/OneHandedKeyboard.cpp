@@ -1,20 +1,47 @@
-// OneHandedKeyboard.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
+#include <windows.h>
 #include <iostream>
 
-int main()
-{
-    std::cout << "Hello World!\n";
+HHOOK keyboardHook;
+
+LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
+    if (nCode == HC_ACTION) {
+        PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT)lParam;
+
+        // Check for Key Down event
+        if (wParam == WM_KEYDOWN) {
+            // Get the virtual key code from the KBDLLHOOKSTRUCT
+            DWORD vkCode = p->vkCode;
+
+            // Optionally, convert the virtual key code to a character or a string
+            // For demonstration, we'll just print the virtual key code
+            std::cout << "Key Pressed: " << vkCode << std::endl;
+
+            // If space is held down, you can implement your mirroring logic here
+            // And optionally print out the mirrored key or action
+            if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
+                std::cout << "Space is held down. Implement mirroring logic here." << std::endl;
+            }
+
+            
+        }
+    }
+
+    return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
 }
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
+int main() {
+    // Set the hook to monitor low-level keyboard input events
+    keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, NULL, 0);
 
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
+    // Basic message loop to keep the application running
+    MSG msg;
+    while (GetMessage(&msg, NULL, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    // Remove the hook when the application exits
+    UnhookWindowsHookEx(keyboardHook);
+
+    return 0;
+}
