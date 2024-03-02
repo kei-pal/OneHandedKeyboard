@@ -5,7 +5,7 @@
 HHOOK keyboardHook;
 std::map<DWORD, DWORD> keyMappings;
 
-void InitializeKeyMappings() {
+static void InitializeKeyMappings() {
     // 6 row
     keyMappings[0xBD] = 0xC0; // - to `
     keyMappings[0x30] = 0x31; // 0 to 1
