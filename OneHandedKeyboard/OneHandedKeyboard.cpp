@@ -45,6 +45,7 @@ LRESULT CALLBACK KeyboardProc(
 ) {
     if (nCode == HC_ACTION) {
         PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT)lParam;
+
         if (p->vkCode == VK_SPACE) {
             if (wParam == WM_KEYDOWN && !isSpacebarHeldDown) {
                 isSpacebarHeldDown = true;
@@ -53,6 +54,23 @@ LRESULT CALLBACK KeyboardProc(
             else if (wParam == WM_KEYUP) {
                 isSpacebarHeldDown = false;
                 std::cout << "Spacebar released" << std::endl;
+            }
+        }
+
+        if (isSpacebarHeldDown) {
+            auto it = keyMappings.find(p->vkCode);
+            if (it != keyMappings.end()) {
+                std::cout << "Mirrored Key: " << it->second << std::endl;
+                // Prepare a KEYBDINPUT structure for the mirrored key
+                INPUT input[1] = {};
+                input[0].type = INPUT_KEYBOARD;
+                input[0].ki.wVk = it->second; // Mirrored virtual key code
+
+                // Send the mirrored key press
+                SendInput(1, input, sizeof(INPUT));
+
+                // Optionally, block the original key press by returning a non-zero value
+                return 1;
             }
         }
     }
