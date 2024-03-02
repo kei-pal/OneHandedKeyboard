@@ -5,12 +5,34 @@
 HHOOK keyboardHook;
 std::map<DWORD, DWORD> keyMappings;
 
-// Initialize key mappings for mirroring
 void InitializeKeyMappings() {
-    // Example mappings: A -> L, S -> K, D -> J, etc.
-    keyMappings[0x41] = 0x4C; // 'A' to 'L'
-    keyMappings[0x53] = 0x4B; // 'S' to 'K'
-    // Add more mappings as needed
+    // top row
+    keyMappings[0xBD] = 0xC0; // - to `
+    keyMappings[0x30] = 0x31; // 0 to 1
+    keyMappings[0x39] = 0x32; // 9 to 2
+    keyMappings[0x38] = 0x33; // 8 to 3
+    keyMappings[0x37] = 0x34; // 7 to 4
+    keyMappings[0x36] = 0x35; // 6 to 5
+
+    // second row
+    keyMappings[0xDC] = 0x09; // \ to tab <- not sure
+    keyMappings[0x50] = 0x51; // p to q
+    keyMappings[0x4F] = 0x57; // o to w
+    keyMappings[0x49] = 0x45; // i to e
+    keyMappings[0x55] = 0x52; // u to 
+    keyMappings[0x59] = 0x54; // y to t
+
+    keyMappings[0x] = 0x; //
+    keyMappings[0x] = 0x; //
+    keyMappings[0x] = 0x; //
+    keyMappings[0x] = 0x; //
+    keyMappings[0x] = 0x; //
+    keyMappings[0x] = 0x; //
+    keyMappings[0x] = 0x; //
+    keyMappings[0x] = 0x; //
+    keyMappings[0x] = 0x; //
+    keyMappings[0x] = 0x; //
+    keyMappings[0x] = 0x; //
 }
 
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
