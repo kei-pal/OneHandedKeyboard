@@ -4,6 +4,7 @@
 
 HHOOK keyboardHook;
 std::map<DWORD, DWORD> keyMappings;
+bool isSpacebarHeldDown = false;
 
 static void InitializeKeyMappings() {
     // 6 row
@@ -37,29 +38,28 @@ static void InitializeKeyMappings() {
     keyMappings[0x4E] = 0x42; // N to B
 }
 
-LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
-    if (nCode >= 0 && wParam == WM_KEYDOWN) {
+LRESULT CALLBACK KeyboardProc(
+    int nCode, 
+    WPARAM wParam, 
+    LPARAM lParam
+) {
+    if (nCode == HC_ACTION) {
         PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT)lParam;
-
-        // Check if space is held down
-        if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
-            auto it = keyMappings.find(p->vkCode);
-            if (it != keyMappings.end()) {
-                // Prepare a KEYBDINPUT structure for the mirrored key
-                INPUT input[1] = {};
-                input[0].type = INPUT_KEYBOARD;
-                input[0].ki.wVk = it->second; // Mirrored virtual key code
-
-                // Send the mirrored key press
-                SendInput(1, input, sizeof(INPUT));
-
-                // Optionally, block the original key press by returning a non-zero value
-                return 1;
+        if (p->vkCode == VK_SPACE) {
+            if (wParam == WM_KEYDOWN && !isSpacebarHeldDown) {
+                isSpacebarHeldDown = true;
+                std::cout << "Spacebar pressed down" << std::endl;
+            }
+            else if (wParam == WM_KEYUP) {
+                isSpacebarHeldDown = false;
+                std::cout << "Spacebar released" << std::endl;
             }
         }
     }
 
     return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
+
+    
 }
 
 int main() {
@@ -78,3 +78,24 @@ int main() {
     UnhookWindowsHookEx(keyboardHook);
     return 0;
 }
+
+//if (nCode >= 0 && wParam == WM_KEYDOWN) {
+//    PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT)lParam;
+
+//    // Check if space is held down
+//    if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
+//        auto it = keyMappings.find(p->vkCode);
+//        if (it != keyMappings.end()) {
+//            // Prepare a KEYBDINPUT structure for the mirrored key
+//            INPUT input[1] = {};
+//            input[0].type = INPUT_KEYBOARD;
+//            input[0].ki.wVk = it->second; // Mirrored virtual key code
+
+//            // Send the mirrored key press
+//            SendInput(1, input, sizeof(INPUT));
+
+//            // Optionally, block the original key press by returning a non-zero value
+//            return 1;
+//        }
+//    }
+//}
