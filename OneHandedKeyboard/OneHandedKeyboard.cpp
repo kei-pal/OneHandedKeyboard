@@ -15,12 +15,12 @@ static void InitializeKeyMappings() {
     keyMappings[0x36] = 0x35; // 6 to 5
 
     // Y row
-    keyMappings[0xDC] = 0x09; // \ to tab <- not sure
-    keyMappings[0x50] = 0x51; // p to q
-    keyMappings[0x4F] = 0x57; // o to w
-    keyMappings[0x49] = 0x45; // i to e
-    keyMappings[0x55] = 0x52; // u to r
-    keyMappings[0x59] = 0x54; // y to t
+    keyMappings[0xDC] = 0x09; // \ to tab
+    keyMappings[0x50] = 0x51; // P to Q
+    keyMappings[0x4F] = 0x57; // O to W
+    keyMappings[0x49] = 0x45; // I to E
+    keyMappings[0x55] = 0x52; // U to R
+    keyMappings[0x59] = 0x54; // Y to T
 
     // H row
     keyMappings[0xBA] = 0x41; // ; to A
