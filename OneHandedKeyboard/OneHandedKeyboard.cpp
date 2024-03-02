@@ -6,7 +6,7 @@ HHOOK keyboardHook;
 std::map<DWORD, DWORD> keyMappings;
 
 void InitializeKeyMappings() {
-    // top row
+    // 6 row
     keyMappings[0xBD] = 0xC0; // - to `
     keyMappings[0x30] = 0x31; // 0 to 1
     keyMappings[0x39] = 0x32; // 9 to 2
@@ -14,25 +14,27 @@ void InitializeKeyMappings() {
     keyMappings[0x37] = 0x34; // 7 to 4
     keyMappings[0x36] = 0x35; // 6 to 5
 
-    // second row
+    // Y row
     keyMappings[0xDC] = 0x09; // \ to tab <- not sure
     keyMappings[0x50] = 0x51; // p to q
     keyMappings[0x4F] = 0x57; // o to w
     keyMappings[0x49] = 0x45; // i to e
-    keyMappings[0x55] = 0x52; // u to 
+    keyMappings[0x55] = 0x52; // u to r
     keyMappings[0x59] = 0x54; // y to t
 
-    keyMappings[0x] = 0x; //
-    keyMappings[0x] = 0x; //
-    keyMappings[0x] = 0x; //
-    keyMappings[0x] = 0x; //
-    keyMappings[0x] = 0x; //
-    keyMappings[0x] = 0x; //
-    keyMappings[0x] = 0x; //
-    keyMappings[0x] = 0x; //
-    keyMappings[0x] = 0x; //
-    keyMappings[0x] = 0x; //
-    keyMappings[0x] = 0x; //
+    // H row
+    keyMappings[0xBA] = 0x41; // ; to A
+    keyMappings[0x4C] = 0x53; // L to S
+    keyMappings[0x4B] = 0x44; // K to D
+    keyMappings[0x4A] = 0x46; // J to F
+    keyMappings[0x48] = 0x47; // H to G
+
+    // B row
+    keyMappings[0xBF] = 0x5A; // / to Z
+    keyMappings[0xBE] = 0x58; // . to X
+    keyMappings[0xBC] = 0x43; // , to C
+    keyMappings[0x4D] = 0x56; // M to V
+    keyMappings[0x4E] = 0x42; // N to B
 }
 
 LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
