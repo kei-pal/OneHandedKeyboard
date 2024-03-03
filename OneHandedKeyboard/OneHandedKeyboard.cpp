@@ -1,11 +1,78 @@
 #include <windows.h>
 #include <iostream>
+#include <chrono>
 #include <map>
 
-HHOOK keyboardHook;
+using Clock = std::chrono::high_resolution_clock;
+std::chrono::time_point<Clock> spacePressedTime;
+bool spaceHeld = false;
 std::map<DWORD, DWORD> keyMappings;
-bool isSpacePressed = false;
-bool isOtherKeyPressed = false;
+
+bool SendMirroredKeyPress(UINT vkCode);
+void InitializeKeyMappings();
+
+LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
+    if (nCode == HC_ACTION) {
+        auto kbdStruct = *((KBDLLHOOKSTRUCT*)lParam);
+        if (kbdStruct.vkCode == VK_SPACE) {
+            switch (wParam) {
+            case WM_KEYDOWN:
+                if (!spaceHeld) { // Check if this is the first event of space bar press
+                    spacePressedTime = Clock::now();
+                    spaceHeld = true; // Prevent re-entry for this press
+                }
+                return 1; // Block this event to prevent default space input
+            case WM_KEYUP:
+                if (spaceHeld) {
+                    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - spacePressedTime).count();
+                    if (elapsed < 200) { // Threshold for distinguishing tap from hold
+                        // It was a tap, simulate a space key press
+                        INPUT input[2] = {};
+                        input[0].type = INPUT_KEYBOARD;
+                        input[0].ki.wVk = VK_SPACE;
+                        input[1].type = INPUT_KEYBOARD;
+                        input[1].ki.wVk = VK_SPACE;
+                        input[1].ki.dwFlags = KEYEVENTF_KEYUP;
+                        SendInput(2, input, sizeof(INPUT));
+                    }
+                    else {
+                        // It was a hold, so enter or stay in mirror mode without inserting a space
+                        std::cout << "Leaving mirror mode.\n";
+                    }
+                    spaceHeld = false; // Reset for the next press
+                    return 1; // Block the event to prevent default handling
+                }
+                break;
+            }
+        }
+        else {
+            // For other keys, check if space is held (mirror mode active) and handle accordingly
+            if (spaceHeld && (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)) {
+                if (SendMirroredKeyPress(kbdStruct.vkCode)) {
+                    return 1; // Block the original key press
+                }
+            }
+        }
+    }
+    return CallNextHookEx(NULL, nCode, wParam, lParam);
+}
+
+bool SendMirroredKeyPress(UINT vkCode) {
+    auto it = keyMappings.find(vkCode);
+    if (it != keyMappings.end()) {
+        INPUT input[1] = {};
+        input[0].type = INPUT_KEYBOARD;
+        input[0].ki.wVk = it->second; // Mirrored virtual key code
+
+        // Send the mirrored key press
+        SendInput(1, input, sizeof(INPUT));
+
+        // Indicate that the original key press should be blocked
+        return true;
+    }
+    // No mirroring needed for this key
+    return false;
+}
 
 static void InitializeKeyMappings() {
     // 6 row
@@ -39,110 +106,18 @@ static void InitializeKeyMappings() {
     keyMappings[0x4E] = 0x42; // N to B
 }
 
-LRESULT CALLBACK KeyboardProc(
-    int nCode, 
-    WPARAM wParam, 
-    LPARAM lParam
-) {
-    if (nCode == HC_ACTION) {
-        PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT)lParam;
-
-        if (wParam == WM_KEYDOWN) {
-            if (!isSpacePressed) {
-                if (p->vkCode == VK_SPACE) {
-                    isSpacePressed = true;
-                    return 1;
-                }
-            }
-            else {
-                isOtherKeyPressed = true;
-
-                // cancel repeat spaces
-                if (p->vkCode == VK_SPACE) {
-                    isSpacePressed = true;
-                    return 1;
-                }
-
-                // mirror input
-                auto it = keyMappings.find(p->vkCode);
-                if (it != keyMappings.end()) {
-                    // Prepare a KEYBDINPUT structure for the mirrored key
-                    INPUT input[1] = {};
-                    input[0].type = INPUT_KEYBOARD;
-                    input[0].ki.wVk = it->second; // Mirrored virtual key code
-
-                    // Send the mirrored key press
-                    SendInput(1, input, sizeof(INPUT));
-
-                    // Block the original key press by returning a non-zero value
-                    return 1;
-                }
-            }
-        }
-        else if (wParam == WM_KEYUP) {
-            if (p->vkCode == VK_SPACE) {
-                if (isOtherKeyPressed) {
-                    isSpacePressed = false;
-                    isOtherKeyPressed = false;
-                    return 1;
-                }
-                else {
-                    // allow space to only happen here
-                    INPUT input[2] = {};
-
-                    // Set up a key press event
-                    input[0].type = INPUT_KEYBOARD;
-                    input[0].ki.wVk = VK_SPACE;
-                    input[0].ki.dwFlags = 0; // 0 for key press
-
-                    // Set up a key release event
-                    input[1].type = INPUT_KEYBOARD;
-                    input[1].ki.wVk = VK_SPACE;
-                    input[1].ki.dwFlags = KEYEVENTF_KEYUP; // Indicate key release
-
-                    // Send the simulated key press and release
-                    SendInput(2, input, sizeof(INPUT));
-                }
-            }
-        }
-    }
-    return CallNextHookEx(keyboardHook, nCode, wParam, lParam);
-}
-
 int main() {
     InitializeKeyMappings();
 
-    // Set the hook
-    keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KeyboardProc, NULL, 0);
+    HHOOK hhkLowLevelKybd = SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, 0, 0);
+    std::cout << "Hook set. Press and hold space to enter mirror mode. Tap space for normal input. N should switch to b in mirror mode.\n";
 
-    // Message loop
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0)) {
+    while (!GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
 
-    UnhookWindowsHookEx(keyboardHook);
+    UnhookWindowsHookEx(hhkLowLevelKybd);
     return 0;
 }
-
-//if (nCode >= 0 && wParam == WM_KEYDOWN) {
-//    PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT)lParam;
-
-//    // Check if space is held down
-//    if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
-//        auto it = keyMappings.find(p->vkCode);
-//        if (it != keyMappings.end()) {
-//            // Prepare a KEYBDINPUT structure for the mirrored key
-//            INPUT input[1] = {};
-//            input[0].type = INPUT_KEYBOARD;
-//            input[0].ki.wVk = it->second; // Mirrored virtual key code
-
-//            // Send the mirrored key press
-//            SendInput(1, input, sizeof(INPUT));
-
-//            // Optionally, block the original key press by returning a non-zero value
-//            return 1;
-//        }
-//    }
-//}
