@@ -88,6 +88,20 @@ LRESULT CALLBACK KeyboardProc(
                 }
                 else {
                     // allow space to only happen here
+                    INPUT input[2] = {};
+
+                    // Set up a key press event
+                    input[0].type = INPUT_KEYBOARD;
+                    input[0].ki.wVk = VK_SPACE;
+                    input[0].ki.dwFlags = 0; // 0 for key press
+
+                    // Set up a key release event
+                    input[1].type = INPUT_KEYBOARD;
+                    input[1].ki.wVk = VK_SPACE;
+                    input[1].ki.dwFlags = KEYEVENTF_KEYUP; // Indicate key release
+
+                    // Send the simulated key press and release
+                    SendInput(2, input, sizeof(INPUT));
                 }
             }
         }
